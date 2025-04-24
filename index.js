@@ -3,21 +3,34 @@ import express from 'express';
 import multer from 'multer';
 import csv from 'csvtojson';
 import fs from 'fs';
+import zoneRouter from './routes/zone.js';
+import heatmapRouter from './routes/heatmap.js';
+console.log('heatmapRouter =', heatmapRouter);
+console.log('zoneRouter =', zoneRouter);
 
 import connectToMongoDB from './db.js';
 import { InterestByZoneRaw, HeatmapRaw } from './models.js';
 import './scheduler.js';
 
+import path, { dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
 const upload = multer({ dest: 'uploads/' });
 
+app.use(express.static(path.resolve(__dirname, 'front')));
+
+
+
 // ─── 解析檔名 ─────────────────────────────────────────────────────────
 function parseFilename(filename) {
   // 範例：CH3HeatmapData... 或 CH4InterestByZone...
-  const m = filename.match(/CH(\d+)(InterestByZone|HeatmapData)/i);
+  const m = filename.match(/CH(\d+)(InterestByZone|HeatmapData|PeopleCounting)/i);
   return m ? { ch: Number(m[1]), type: m[2] } : null;
 }
+
 
 
 // ─── 上傳 API ─────────────────────────────────────────────────────────
@@ -70,6 +83,17 @@ app.post('/upload', upload.single('reports'), async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+app.use('/api', zoneRouter);
+app.use('/api', heatmapRouter);
+
+if (app._router) {
+  console.log('--- ROUTES ---');
+  app._router.stack
+    .filter(r => r.route)
+    .forEach(r => console.log(r.route.path));
+}
+
 
 // ─── 啟動 ─────────────────────────────────────────────────────────────
 connectToMongoDB().then(() => {

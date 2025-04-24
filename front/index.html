@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <title>Data Query Demo</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    label { display: block; margin-top: 8px; }
+    #result {
+      white-space: pre;
+      background: #f4f4f4;
+      padding: 10px;
+      border: 1px solid #ccc;
+      margin-top: 16px;
+      max-height: 400px;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Data Query Demo</h1>
+
+  <label>
+    Dataset:
+    <select id="dataset">
+      <option value="zone">Zone</option>
+      <option value="heatmap">Heatmap</option>
+    </select>
+  </label>
+
+  <label>
+    Channel (CH):
+    <select id="ch">
+      <option value="3">3</option>
+      <option value="4">4</option>
+    </select>
+  </label>
+
+  <label>
+    Start:
+    <input type="datetime-local" id="start" />
+  </label>
+
+  <label>
+    End:
+    <input type="datetime-local" id="end" />
+  </label>
+
+  <label>
+    Granularity:
+    <select id="gran">
+      <option value="auto">auto</option>
+      <option value="raw">raw</option>
+      <option value="hourly">hour</option>
+      <option value="daily">day</option>
+      <option value="weekly">week</option>
+    </select>
+  </label>
+
+  <button id="queryBtn">Query</button>
+
+  <div id="result"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
