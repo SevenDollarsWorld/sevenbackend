@@ -3,47 +3,52 @@
 <head>
   <meta charset="UTF-8" />
   <title>Data Query Demo</title>
+
+  <!-- CDN：Chart.js & Luxon (全域 luxon.DateTime) -->
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    label { display: block; margin-top: 8px; }
-    #result {
-      white-space: pre;
-      background: #f4f4f4;
-      padding: 10px;
-      border: 1px solid #ccc;
-      margin-top: 16px;
-      max-height: 400px;
-      overflow: auto;
-    }
+    body   { font-family:sans-serif; padding:24px; max-width:920px; margin:auto; }
+    label  { display:block; margin-top:8px; }
+    #result{ white-space:pre; background:#f9f9f9; border:1px solid #ccc; padding:10px;
+             max-height:320px; overflow:auto; }
+    canvas { width:100%; max-height:400px; margin-top:24px; }
   </style>
 </head>
 <body>
-  <h1>Data Query Demo</h1>
+  <h1>Query & Visualize</h1>
 
   <label>
     Dataset:
     <select id="dataset">
       <option value="zone">Zone</option>
       <option value="heatmap">Heatmap</option>
+      <option value="people">People Counting</option>
+
     </select>
   </label>
 
   <label>
     Channel (CH):
     <select id="ch">
+      <option value="1">1</option>
+      <option value="2">2</option>
       <option value="3">3</option>
       <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="6">6</option>
+      <option value="7">7</option>
+      <option value="8">8</option>
     </select>
   </label>
 
   <label>
-    Start:
-    <input type="datetime-local" id="start" />
+    Start: <input type="datetime-local" id="start" />
   </label>
 
   <label>
-    End:
-    <input type="datetime-local" id="end" />
+    End:   <input type="datetime-local" id="end" />
   </label>
 
   <label>
@@ -54,13 +59,17 @@
       <option value="hourly">hour</option>
       <option value="daily">day</option>
       <option value="weekly">week</option>
+      
     </select>
   </label>
 
   <button id="queryBtn">Query</button>
 
+  <canvas id="chart"></canvas>
   <div id="result"></div>
-
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- app.js 放最後 -->
   <script src="app.js"></script>
 </body>
 </html>

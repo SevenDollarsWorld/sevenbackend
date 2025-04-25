@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-// ─── 5‑分鐘原始資料 ────────────────────────────────────────────────
+// ─────────────────────────────── RAW Tables ───────────────────────────────
 const izRawSchema = new mongoose.Schema({
   timestamp: Number,
   datetime : Date,
@@ -13,46 +13,43 @@ const heatmapRawSchema = new mongoose.Schema({
   timestamp: Number,
   datetime : Date,
   ch       : Number,
-  heatmap  : [Number],          // 64×36 = 2304 elements
+  heatmap  : [Number],   // 64 × 36
 });
 
-// ─── Interest‑By‑Zone 聚合 (hour/day/week) ─────────────────────────
-const izHourlySchema = new mongoose.Schema({
-  dateHour: Date,
-  ch      : Number,
-  zones   : [{ zone_name: String, count: Number }],
+// People Counting (a / b counts per zone)
+const pcRawSchema = new mongoose.Schema({
+  timestamp  : Number,
+  datetime   : Date,
+  ch         : Number,
+  count      : Number,
+  cumulative : Number,
+  zones      : [{ a_name:String, b_name:String, a:Number, b:Number }],
 });
 
-const izDailySchema = new mongoose.Schema({
-  date : Date,
-  ch   : Number,
-  zones: [{ zone_name: String, count: Number }],
-});
+// ─────────────────────────────── Hourly / Daily / Weekly ──────────────────
+const zoneAgg = new mongoose.Schema({ zone_name:String, count:Number });
+const pcZoneAgg = new mongoose.Schema({ a_name:String, b_name:String, a:Number, b:Number });
 
-const izWeeklySchema = new mongoose.Schema({
-  weekStart: Date,
-  ch       : Number,
-  zones    : [{ zone_name: String, count: Number }],
-});
+function aggSchema(timeField, zoneSchema) {
+  return new mongoose.Schema({
+    [timeField]: Date,
+    ch         : Number,
+    zones      : [zoneSchema],
+  });
+}
 
-// ─── Heatmap 聚合 (hour/day/week) ──────────────────────────────────
-const heatmapHourlySchema = new mongoose.Schema({
-  dateHour: Date,
-  ch      : Number,
-  heatmap : [Number],
-});
 
-const heatmapDailySchema = new mongoose.Schema({
-  date   : Date,
-  ch     : Number,
-  heatmap: [Number],
-});
+const izHourlySchema = aggSchema('dateHour', zoneAgg);
+const izDailySchema  = aggSchema('date',     zoneAgg);
+const izWeeklySchema = aggSchema('weekStart',zoneAgg);
 
-const heatmapWeeklySchema = new mongoose.Schema({
-  weekStart: Date,
-  ch       : Number,
-  heatmap  : [Number],
-});
+const heatmapHourlySchema = aggSchema('dateHour', new mongoose.Schema({ heatmap:[Number] },{_id:false}));
+const heatmapDailySchema  = aggSchema('date',     new mongoose.Schema({ heatmap:[Number] },{_id:false}));
+const heatmapWeeklySchema = aggSchema('weekStart',new mongoose.Schema({ heatmap:[Number] },{_id:false}));
+
+const pcHourlySchema = aggSchema('dateHour', pcZoneAgg);
+const pcDailySchema  = aggSchema('date',     pcZoneAgg);
+const pcWeeklySchema = aggSchema('weekStart',pcZoneAgg);
 
 // ─── Model Exports ────────────────────────────────────────────────
 export const InterestByZoneRaw     = mongoose.models.InterestByZoneRaw     || mongoose.model('InterestByZoneRaw',     izRawSchema,          'interest_by_zone_raw');
@@ -65,3 +62,7 @@ export const InterestByZoneWeekly  = mongoose.models.InterestByZoneWeekly  || mo
 export const HeatmapHourly         = mongoose.models.HeatmapHourly         || mongoose.model('HeatmapHourly',         heatmapHourlySchema,  'heatmap_hourly');
 export const HeatmapDaily          = mongoose.models.HeatmapDaily          || mongoose.model('HeatmapDaily',          heatmapDailySchema,   'heatmap_daily');
 export const HeatmapWeekly         = mongoose.models.HeatmapWeekly         || mongoose.model('HeatmapWeekly',         heatmapWeeklySchema,  'heatmap_weekly');
+
+export const PeopleCountingHourly = mongoose.models.PeopleCountingHourly || mongoose.model('PeopleCountingHourly', pcHourlySchema,   'people_counting_hourly');
+export const PeopleCountingDaily  = mongoose.models.PeopleCountingDaily  || mongoose.model('PeopleCountingDaily',  pcDailySchema,    'people_counting_daily');
+export const PeopleCountingWeekly = mongoose.models.PeopleCountingWeekly || mongoose.model('PeopleCountingWeekly', pcWeeklySchema,   'people_counting_weekly');
