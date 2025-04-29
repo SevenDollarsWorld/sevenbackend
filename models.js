@@ -54,6 +54,8 @@ const pcWeeklySchema = aggSchema('weekStart',pcZoneAgg);
 // ─── Model Exports ────────────────────────────────────────────────
 export const InterestByZoneRaw     = mongoose.models.InterestByZoneRaw     || mongoose.model('InterestByZoneRaw',     izRawSchema,          'interest_by_zone_raw');
 export const HeatmapRaw           = mongoose.models.HeatmapRaw           || mongoose.model('HeatmapRaw',           heatmapRawSchema,     'heatmap_raw');
+export const PeopleCountingRaw = mongoose.models.PeopleCountingRaw
+  || mongoose.model('PeopleCountingRaw', pcRawSchema, 'people_counting_raw');
 
 export const InterestByZoneHourly  = mongoose.models.InterestByZoneHourly  || mongoose.model('InterestByZoneHourly',  izHourlySchema,       'interest_by_zone_hourly');
 export const InterestByZoneDaily   = mongoose.models.InterestByZoneDaily   || mongoose.model('InterestByZoneDaily',   izDailySchema,        'interest_by_zone_daily');

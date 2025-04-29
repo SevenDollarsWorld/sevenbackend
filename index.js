@@ -8,13 +8,16 @@ import { DateTime } from 'luxon';
 import zoneRouter from './routes/zone.js';
 import heatmapRouter from './routes/heatmap.js';
 import peopleRouter from './routes/people.js';
-
+import compareRouter from './routes/compare.js';
+import compareHMRouter from './routes/compareHeatmap.js';
+import snapshotRouter from './routes/snapshot.js';
 
 console.log('heatmapRouter =', heatmapRouter);
 console.log('zoneRouter =', zoneRouter);
 
 import connectToMongoDB from './db.js';
-import { InterestByZoneRaw, HeatmapRaw, PeopleCountingRaw } from './models.js';
+import { InterestByZoneRaw, HeatmapRaw } from './models.js';
+import { PeopleCountingRaw } from './models.js'; 
 import './scheduler.js';
 
 import path, { dirname } from 'path';
@@ -89,27 +92,56 @@ app.post('/upload', upload.single('reports'), async (req, res) => {
       console.log(`[Heatmap] insert ${docs.length} docs (CH${meta.ch})`);
 
     /* ── PeopleCounting ───────────────────────────── */
-    } else if (meta.type === 'PeopleCounting') {
-      docs = rows.map(r => {
-        const zones = JSON.parse(r['Count by Zone']).map(z => ({
-          a_name: z.a_name,
-          b_name: z.b_name,
-          a     : Number(z.a),
-          b     : Number(z.b),
-        }));
-        return {
-          timestamp  : Number(r.timestamp ?? r.TimeUnix ?? 0),
-          datetime   : DateTime.fromFormat(r.Time, 'MM/dd/yyyy HH:mm:ss',
-                                           { zone:'Asia/Taipei' }).toJSDate(),
-          ch         : meta.ch,
-          count      : Number(r.Count),
-          cumulative : Number(r['Cumulative Count']),
-          zones,
-        };
-      });
-      await PeopleCountingRaw.insertMany(docs);
-      console.log(`[PeopleCounting] insert ${docs.length} docs (CH${meta.ch})`);
-    }
+  } else if (meta.type === 'PeopleCounting') {
+    docs = rows.map((r, idx) => {
+      let zones = [];
+  
+      /* ── 1. 先嘗試標準 JSON ---------------------------------- */
+      const raw = (r['Count by Zone'] || '').trim();
+      if (raw) {
+        try {
+          zones = JSON.parse(raw);               // 標準 JSON
+        } catch {                                // 非標準，再手動處理
+          try {
+            zones = eval(raw);                   // e.g. [{a_name:'A', …}]
+          } catch {/* 讓下一步補 0 */}
+        }
+      }
+  
+      /* ── 2. 若仍空陣列 → 看是否有獨立欄位 ------------------- */
+      if (!zones.length && r.a_name && r.b_name) {
+        zones = [{
+          a_name: r.a_name,
+          b_name: r.b_name,
+          a     : Number(r.a ?? r.A ?? 0),
+          b     : Number(r.b ?? r.B ?? 0),
+        }];
+      }
+  
+      /* ── 3. 最後仍然空，就塞一筆 0 值免得前端炸掉 ---------- */
+      if (!zones.length) {
+        console.warn(`[Row ${idx}] zones empty, fill zero`);
+        zones = [{ a_name:'N/A', b_name:'N/A', a:0, b:0 }];
+      }
+  
+      return {
+        timestamp : Number(r.timestamp ?? r.TimeUnix ?? 0),
+        datetime  : DateTime.fromFormat(
+                      r.Time || r.datetime,
+                      'MM/dd/yyyy HH:mm:ss',
+                      { zone:'Asia/Taipei' }).toJSDate(),
+        ch        : meta.ch,
+        count     : Number(r.Count ?? 0),
+        cumulative: Number(r['Cumulative Count'] ?? 0),
+        zones,
+      };
+    });
+  
+    await PeopleCountingRaw.insertMany(docs);
+    console.log(`[PeopleCounting] insert ${docs.length} docs (CH${meta.ch})`);
+  }
+  
+  
 
     fs.unlinkSync(req.file.path);          // 刪掉暫存檔
     res.json({ success:true, inserted:docs.length, type:meta.type });
@@ -123,6 +155,9 @@ app.post('/upload', upload.single('reports'), async (req, res) => {
 app.use('/api', zoneRouter);
 app.use('/api', heatmapRouter);
 app.use('/api', peopleRouter);
+app.use('/api', compareRouter);
+app.use('/api', compareHMRouter);
+app.use('/api', snapshotRouter);
 
 if (app._router) {
   console.log('--- ROUTES ---');
